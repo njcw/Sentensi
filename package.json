@@ -13,20 +13,29 @@
     "@emotion/styled": "^11.11.0",
     "@mui/joy": "^5.0.0-beta.20",
     "@prisma/client": "^5.8.0",
+    "@radix-ui/react-slot": "^1.2.4",
     "@svgr/webpack": "^8.1.0",
     "autoprefixer": "^10.4.16",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.561.0",
     "next": "14.0.4",
     "prettier": "^3.1.1",
     "prisma": "^5.7.1",
     "react": "^18",
     "react-dom": "^18",
-    "sass": "^1.69.5",
-    "tailwindcss": "^3.4.1"
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "sass": "^1.69.5",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

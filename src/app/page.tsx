@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-	Button,
+
 	DialogActions,
 	DialogContent,
 	DialogTitle,
@@ -11,149 +11,230 @@ import {
 	Input,
 	Modal,
 	ModalDialog,
-	Table
+
 } from '@mui/joy';
+import { Lesson } from '@/types/dto/lesson';
+import { Player } from '@/types/dto/player';
+import { DataTable, DataTableColumn } from './create/components/common/DataTable';
+import { Button } from '@/components/ui/button';
+import { Pen, Trash } from 'lucide-react';
+
 
 export default function Home() {
-	const [data, setData] = useState<any[]>([]);
-	const [data2, setData2] = useState<any[]>([]);
-	const [openId, setOpenId] = useState<number>(-1);
+	const [lessons, setLessons] = useState<Lesson[]>([])
+	const [players, setPlayers] = useState<Player[]>([])
+	const [openLessonId, setOpenLessonId] = useState<number | null>(null)
+	const [labelFilter, setLabelFilter] = useState('')
+	const [lessonsLoading, setLessonsLoading] = useState(true);
+	const [playersLoading, setPlayersLoading] = useState(false);
 
-	const [label, setLabel] = useState<string>('');
 
 	useEffect(() => {
-		fetch(`/api/lesson/`).then((res) => {
-			res.json().then((data) => {
-				setData(data);
-			});
-		});
+		setLessonsLoading(true);
 
-		fetch(`/api/player/`).then((res) => {
-			res.json().then((data) => {
-				setData2(data);
-				console.log(data);
-			});
-		});
+		fetch('/api/lesson')
+			.then(res => res.json())
+			.then(data => {
+				setLessons(data);
+				setLessonsLoading(false);
+			})
+			.catch(() => setLessonsLoading(false));
 	}, []);
 
-	return (
-		<main
-			style={{
-				background: '#E3F5FF',
-				width: '100vw',
-				height: '100vh',
-				overflow: 'auto'
-			}}
-		>
-			<header className='flex'>
-				<Link href={'/create'}>
-					<Button variant='soft' color='primary'>
-						Create new lesson
+	useEffect(() => {
+		if (openLessonId === null) return;
+
+		setPlayersLoading(true);
+
+		fetch('/api/player')
+			.then(res => res.json())
+			.then(data => {
+				setPlayers(data);
+				setPlayersLoading(false);
+			})
+			.catch(() => setPlayersLoading(false));
+	}, [openLessonId]);
+
+
+
+	const columns: DataTableColumn<Lesson>[] = [
+		{
+			key: 'id',
+			header: '#',
+			render: (_value, _row, index) => index + 1
+		},
+		{
+			key: 'id',
+			header: 'ID'
+		},
+		{
+			key: 'name',
+			header: 'Name'
+		},
+		{
+			key: 'label',
+			header: 'Label',
+			render: value =>
+				typeof value === 'string' && value.trim() ? value : '—'
+		},
+		{
+			key: 'id',
+			header: 'Play',
+			render: (_value, row) => (
+				<div className="flex gap-2">
+					<Link href={`/play/?id=${row.id}`} target="_blank">
+						<Button size="sm">
+							Play
+						</Button>
+
+					</Link>
+
+					<Button
+						variant="link"
+						size="sm"
+						onClick={() =>
+							navigator.clipboard.writeText(
+								`${window.location.host}/play/?id=${row.id}`
+							)
+						}
+					>
+						Copy
 					</Button>
-				</Link>
-				<Input
-					value={label}
-					onChange={(e) => setLabel(e.target.value)}
-					placeholder='Filter by label'
-				/>
-			</header>
-			<main>
-				<Table>
-					<thead>
-						<tr>
-							<th>Row</th>
-							<th>ID</th>
-							<th>Name</th>
-							<th>Label</th>
-							<th>Play</th>
-							<th>Results</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						{data
-							.filter((el) => el.label.includes(label))
-							.map((el, index) => (
-								<tr key={index}>
-									<td>{index + 1}</td>
-									<td>{el.id}</td>
-									<td>{el.name}</td>
-									<td>{el.label}</td>
-									<td>
-										<Link href={`/play/?id=${el.id}`} target={'_blank'}>
-											<Button variant='soft' color='primary'>
-												Play
-											</Button>
-										</Link>
-										<label
-											className='cursor-pointer'
-											onClick={() => {
-												navigator.clipboard.writeText(`${window.location.host}/play/?id=${el.id}`);
-											}}
-										>
-											Copy
-										</label>
-									</td>
-									<td>
-										<Button
-											variant='soft'
-											color='success'
-											onClick={() => {
-												setOpenId(el.id);
-											}}
-										>
-											View results
-										</Button>
-									</td>
-									<td>
-										<Button
-											onClick={() => {
-												fetch(`/api/lesson/${el.id}`, {
-													method: 'DELETE'
-												}).then(() => {
-													window.location.reload();
-												});
-											}}
-											variant='soft'
-											color='danger'
-										>
-											Delete
-										</Button>
-										<Link href={`/create/?id=${el.id}`}>
-											<Button variant='soft' color='primary'>
-												Edit
-											</Button>
-										</Link>
-									</td>
-								</tr>
-							))}
-					</tbody>
-				</Table>
-			</main>
-			<Modal open={openId !== -1} onClose={() => setOpenId(-1)}>
-				<ModalDialog variant='outlined' role='alertdialog'>
+
+				</div>
+			)
+		},
+		{
+			key: 'id',
+			header: 'Results',
+			render: (_value, row) => (
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={() => setOpenLessonId(row.id)}
+				>
+					View
+				</Button>
+			)
+		},
+		{
+			key: 'id',
+			header: 'Actions',
+			render: (_value, row) => (
+				<div className="flex gap-2">
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={() => {
+							fetch(`/api/lesson/${row.id}`, { method: 'DELETE' })
+								.then(() => window.location.reload())
+						}}
+					>
+						<Trash className='text-destructive' />
+					</Button>
+
+					<Link href={`/create/?id=${row.id}`}>
+						<Button variant="ghost" size="icon">
+							<Pen />
+						</Button>
+
+					</Link>
+				</div>
+			)
+		}
+	]
+
+
+	const filteredLessons = lessons.filter(lesson =>
+		lesson.label.toLowerCase().includes(labelFilter.toLowerCase())
+	)
+	return (
+		<main className="min-h-screen bg-sidebar overflow-hidden">
+			<div
+				className="mx-auto w-full max-w-8xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
+			>
+
+				<header
+					className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6"
+				>
+
+					<Input
+						value={labelFilter}
+						onChange={(e) => setLabelFilter(e.target.value)}
+						placeholder="Search by label"
+						className="w-full sm:w-64"
+					/>
+
+
+					<Link href="/create" className="w-full sm:w-auto">
+						<Button className="w-full sm:w-auto">
+							Create new lesson
+						</Button>
+					</Link>
+				</header>
+
+
+				<div className="overflow-x-auto">
+		
+
+						<DataTable<Lesson>
+							columns={columns}
+							data={filteredLessons}
+							loading={lessonsLoading}
+						/>
+		
+
+				</div>
+			</div>
+
+			<Modal open={openLessonId !== null} onClose={() => setOpenLessonId(null)}>
+				<ModalDialog>
 					<DialogTitle>Results</DialogTitle>
 					<Divider />
 					<DialogContent>
-						{data2
-							.filter((el) => el.lessonID === openId)
-							.map((el2, index) => (
-								<p key={index}>
-									{el2.name}: {el2.result}
-								</p>
-							))}
+						<div className="space-y-2">
+							{/* Header */}
+							<div className="grid grid-cols-[1fr_80px_80px_80px] text-xs text-muted-foreground px-2">
+								<span>Student</span>
+								<span className="text-center">Right</span>
+								<span className="text-center">Wrong</span>
+								<span className="text-center">Retries</span>
+							</div>
+
+							<Divider />
+
+							{/* Rows */}
+							{players
+								.filter(p => p.lessonID === openLessonId)
+								.map(p => {
+									const [right, wrong, retries] = p.result
+										.replaceAll(';', '')
+										.split(' ')
+										.filter(v => !isNaN(Number(v)))
+										.map(Number);
+
+									return (
+										<div
+											key={p.id}
+											className="grid grid-cols-[1fr_80px_80px_80px] items-center px-2 py-1 text-sm"
+										>
+											<span className="truncate">{p.name}</span>
+											<span className="text-center">{right}</span>
+											<span className="text-center">{wrong}</span>
+											<span className="text-center">{retries}</span>
+										</div>
+									);
+								})}
+						</div>
 					</DialogContent>
+
 					<DialogActions>
-						<Button
-							variant='plain'
-							color='neutral'
-							onClick={() => setOpenId(-1)}
-						>
-							Close
-						</Button>
+						<Button onClick={() => setOpenLessonId(null)}>Close</Button>
 					</DialogActions>
 				</ModalDialog>
 			</Modal>
 		</main>
+
+
 	);
 }
